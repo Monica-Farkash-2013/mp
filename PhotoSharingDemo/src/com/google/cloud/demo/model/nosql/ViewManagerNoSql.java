@@ -74,9 +74,6 @@ public class ViewManagerNoSql extends DemoEntityManagerNoSql<View> implements
 				new Query.FilterPredicate(ViewNoSql.FIELD_NAME_ACTIVE, FilterOperator.EQUAL, true));
 	    Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND, filters);
 	    query.setFilter(filter);
-	    //Query.Filter viewIdFilter =  new Query.FilterPredicate(ViewNoSql.FIELD_NAME_ACTIVE, FilterOperator.EQUAL, true);
-	    //query.setFilter(viewIdFilter);
-	    //query.addSort(ViewNoSql.FIELD_NAME_UPLOAD_TIME, SortDirection.DESCENDING);
 	    FetchOptions options = FetchOptions.Builder.withDefaults();
 	    return queryEntities(query, options);
 	}

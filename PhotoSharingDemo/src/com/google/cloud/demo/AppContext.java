@@ -13,6 +13,11 @@
  */
 package com.google.cloud.demo;
 
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
+import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserServiceFactory;
 import com.google.cloud.demo.model.AlbumManager;
@@ -22,6 +27,7 @@ import com.google.cloud.demo.model.DemoUser;
 import com.google.cloud.demo.model.DemoUserManager;
 import com.google.cloud.demo.model.LeaderboardManager;
 import com.google.cloud.demo.model.PhotoManager;
+import com.google.cloud.demo.model.SubscriptionManager;
 import com.google.cloud.demo.model.ViewManager;
 
 import java.util.logging.Logger;
@@ -41,6 +47,8 @@ public class AppContext {
   private PhotoServiceManager photoServiceManager;
 
   private DemoEntityManagerFactory entityManagerFactory;
+  
+  private Key reportIntervalKey;
 
   // Prevent the class being instantiated externally.
   private AppContext() {
@@ -51,6 +59,7 @@ public class AppContext {
       Class<?> cls = Class.forName(clsName);
       entityManagerFactory = (DemoEntityManagerFactory) cls.newInstance();
       entityManagerFactory.init(configManager);
+      reportIntervalKey = initReportInterval();
     } catch (ClassNotFoundException e) {
       logger.severe("cannot find demo entity manager factory class:" + e.getMessage());
       throw new RuntimeException("cannot find demo entity manager factory class", e);
@@ -95,6 +104,10 @@ public class AppContext {
 	    return entityManagerFactory.getLeaderboardManager();
 	  }
 
+  public SubscriptionManager getSubscriptionManager() {
+	    return entityManagerFactory.getSubscriptionManager();
+	  }
+
   public ConfigManager getConfigManager() {
     return configManager;
   }
@@ -106,13 +119,54 @@ public class AppContext {
   public DemoUser getCurrentUser() {
     DemoUserManager demoUserManager = entityManagerFactory.getDemoUserManager();
     User user = UserServiceFactory.getUserService().getCurrentUser();
-    DemoUser demoUser = demoUserManager.getUser(user.getUserId());
-    if (demoUser == null) {
-      demoUser = demoUserManager.newUser(user.getUserId());
-      demoUser.setEmail(user.getEmail());
-      demoUser.setNickname(user.getNickname());
-      demoUserManager.upsertEntity(demoUser);
-    }
-    return demoUser;
+    if (user != null) {
+	    DemoUser demoUser = demoUserManager.getUser(user.getUserId());
+	    if (demoUser == null) {
+	      demoUser = demoUserManager.newUser(user.getUserId());
+	      demoUser.setEmail(user.getEmail());
+	      demoUser.setNickname(user.getNickname());
+	      demoUserManager.upsertEntity(demoUser);
+	    }
+	    return demoUser;
+	  }
+    else return null;
   }
+
+  public Key initReportInterval() {
+	  DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+	  Entity interval = new Entity("ReportInterval", "IntervalKey");
+	  interval.setProperty("IntervalOption", "no_reports");
+	  interval.setProperty("PreviousReportTime", 1);
+	  datastore.put(interval);
+	  return interval.getKey();
+  }
+  
+  public String getReportInterval() throws EntityNotFoundException {
+	  DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+	  Entity interval = datastore.get(reportIntervalKey);	
+	  return (String) interval.getProperty("IntervalOption");
+  }
+  
+  public void setReportInterval(String option) throws EntityNotFoundException {
+	  DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+	  Entity interval = datastore.get(reportIntervalKey);	
+	  interval.setProperty("IntervalOption", option);
+	  datastore.put(interval);
+  }
+
+  public long getPreviousReportTime() throws EntityNotFoundException {
+	  DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+	  Entity interval = datastore.get(reportIntervalKey);	
+	  return (long) interval.getProperty("PreviousReportTime");
+	  
+  }
+  
+  public void setPreviousReportTime(long option) throws EntityNotFoundException {
+	  DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+	  Entity interval = datastore.get(reportIntervalKey);	
+	  interval.setProperty("PreviousReportTime", option);
+	  datastore.put(interval);
+	  // just for testing commit and push
+  }
+
 }

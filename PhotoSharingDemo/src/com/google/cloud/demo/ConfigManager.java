@@ -82,6 +82,13 @@ public class ConfigManager {
   }
 
   /**
+   * The set cron time servlet URL.
+   */
+  public String getSetCronTimeUrl() {
+    return "/rate";
+  }
+
+  /**
    * The album cover picture servlet URL.
    */
   public String getAlbumCoverUrl() {
@@ -100,6 +107,13 @@ public class ConfigManager {
    */
   public String getMainPageUrl() {
     return "/photofeed.jsp";
+  }
+
+  /**
+   * The login web page URL.
+   */
+  public String getLoginPageUrl() {
+    return "/Login.jsp";
   }
 
   public String getErrorPageUrl(int code) {

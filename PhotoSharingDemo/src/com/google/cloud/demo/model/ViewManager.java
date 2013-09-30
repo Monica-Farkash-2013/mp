@@ -6,7 +6,7 @@ public interface ViewManager extends DemoEntityManager<View> {
 
 	Iterable<View> getAlbumViews(String albumId);
 
-	ViewNoSql newView(String albumId);
+	View newView(String albumId);
 
 	View getView(String albumId, Long id);
 

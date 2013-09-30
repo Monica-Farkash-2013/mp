@@ -15,6 +15,7 @@ import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.cloud.demo.model.Album;
 import com.google.cloud.demo.model.AlbumManager;
+import com.google.cloud.demo.model.Photo;
 import com.google.cloud.demo.model.Utils;
 
 public class AlbumManagerNoSql extends DemoEntityManagerNoSql<Album> implements	AlbumManager {
@@ -44,8 +45,17 @@ public class AlbumManagerNoSql extends DemoEntityManagerNoSql<Album> implements	
 	  }
 	  
 	@Override
+	public Album getAlbumS(String userId, String albumId) {
+		Iterable<Album> album_iter = getActiveAlbums();
+		for(Album album : album_iter) {
+			if (album.getId().toString().compareTo(albumId) == 0)
+				return album;
+		}
+		return null;
+	}
+		
 	public Album getAlbum(String userId, long id) {
-	    Key key = createAlbumKey(userId, id);
+		Key key = createAlbumKey(userId, id);
 	    return getEntity(key);
 	}
 
@@ -61,6 +71,20 @@ public class AlbumManagerNoSql extends DemoEntityManagerNoSql<Album> implements	
 
 	public Key createAlbumKey(String albumId) {
 		return KeyFactory.createKey(getKind(), albumId);
+	}
+
+	@Override
+	public Iterable<Album> getAlbums(String userId, String albumId) {
+	    Query query = new Query(getKind());
+	    query.setAncestor(userManager.createDemoUserKey(userId));
+	    Query.Filter filterActive = new Query.FilterPredicate(PhotoNoSql.FIELD_NAME_ACTIVE,
+	            FilterOperator.EQUAL, true);
+	    Query.Filter filterAlbumId = new Query.FilterPredicate(PhotoNoSql.FIELD_NAME_ALBUM_ID,
+	            FilterOperator.EQUAL, albumId);
+	    Query.Filter filterComposite = Query.CompositeFilterOperator.and(filterActive, filterAlbumId);
+	    query.setFilter(filterComposite);
+	    FetchOptions options = FetchOptions.Builder.withDefaults();
+	    return queryEntities(query, options);
 	}
 
 	@Override

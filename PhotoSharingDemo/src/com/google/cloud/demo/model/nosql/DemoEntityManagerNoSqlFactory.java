@@ -21,6 +21,7 @@ import com.google.cloud.demo.model.DemoEntityManagerFactory;
 import com.google.cloud.demo.model.DemoUserManager;
 import com.google.cloud.demo.model.LeaderboardManager;
 import com.google.cloud.demo.model.PhotoManager;
+import com.google.cloud.demo.model.SubscriptionManager;
 import com.google.cloud.demo.model.ViewManager;
 
 /**
@@ -35,6 +36,7 @@ public class DemoEntityManagerNoSqlFactory implements DemoEntityManagerFactory {
   private AlbumManagerNoSql albumManager;
   private ViewManagerNoSql viewManager;
   private LeaderboardManagerNoSql leaderboardManager;
+  private SubscriptionManagerNoSql subscriptionManager;
   private boolean initialized;
 
   @Override
@@ -63,6 +65,11 @@ public class DemoEntityManagerNoSqlFactory implements DemoEntityManagerFactory {
   }
   
   @Override
+  public SubscriptionManager getSubscriptionManager() {
+      return subscriptionManager;
+  }
+  
+  @Override
   public DemoUserManager getDemoUserManager() {
     return demoUserManager;
   }
@@ -77,6 +84,7 @@ public class DemoEntityManagerNoSqlFactory implements DemoEntityManagerFactory {
       albumManager = new AlbumManagerNoSql(demoUserManager, photoManager);
       viewManager = new ViewManagerNoSql(albumManager);
       leaderboardManager = new LeaderboardManagerNoSql();
+      subscriptionManager = new SubscriptionManagerNoSql(demoUserManager);
       initialized = true;
     } else {
       throw new IllegalStateException("Should not initialize the factory more than once.");

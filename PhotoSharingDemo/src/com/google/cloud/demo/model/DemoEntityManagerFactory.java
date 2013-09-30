@@ -65,6 +65,13 @@ public interface DemoEntityManagerFactory {
   LeaderboardManager getLeaderboardManager();
 
   /**
+   * Gets the comment manager.
+   *
+   * @return the comment manager object.
+   */
+  SubscriptionManager getSubscriptionManager();
+
+  /**
    * Gets the demo user manager.
    *
    * @return the demo user manager object.

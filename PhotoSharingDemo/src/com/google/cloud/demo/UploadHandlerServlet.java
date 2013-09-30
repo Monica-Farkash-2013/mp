@@ -37,7 +37,11 @@ import javax.servlet.http.HttpServletResponse;
  * @author Michael Tang (ntang@google.com)
  */
 public class UploadHandlerServlet extends HttpServlet {
-	  private static final Logger logger =
+	  /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private static final Logger logger =
 		      Logger.getLogger(UploadHandlerServlet.class.getCanonicalName());
 
   @Override

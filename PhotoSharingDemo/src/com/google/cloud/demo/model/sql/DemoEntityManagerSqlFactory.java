@@ -23,6 +23,7 @@ import com.google.cloud.demo.model.DemoModelException;
 import com.google.cloud.demo.model.DemoUserManager;
 import com.google.cloud.demo.model.LeaderboardManager;
 import com.google.cloud.demo.model.PhotoManager;
+import com.google.cloud.demo.model.SubscriptionManager;
 import com.google.cloud.demo.model.ViewManager;
 
 import java.sql.DriverManager;
@@ -85,6 +86,12 @@ public class DemoEntityManagerSqlFactory implements DemoEntityManagerFactory {
 
 @Override
 public LeaderboardManager getLeaderboardManager() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public SubscriptionManager getSubscriptionManager() {
 	// TODO Auto-generated method stub
 	return null;
 }

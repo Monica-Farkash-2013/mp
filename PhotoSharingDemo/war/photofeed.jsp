@@ -18,6 +18,7 @@
   AlbumManager albumManager = appContext.getAlbumManager();
   ViewManager viewManager = appContext.getViewManager();
   LeaderboardManager leaderboardManager = appContext.getLeaderboardManager();
+  SubscriptionManager subscriptionManager = appContext.getSubscriptionManager();
 %>
 <!DOCTYPE html>
 
@@ -55,9 +56,9 @@ function init() {
 	else {
 		tabId = getUrlVars()["tabId"];
 		if (!tabId || tabId.length === 0)
-			tabId = "managestream";
+			tabId = "viewstream";
 	}
-	
+    	
     for ( var id in tabLinks ) {
         if ( id == tabId ) tabLinks[id].className = 'selected';
     }
@@ -66,6 +67,13 @@ function init() {
      for ( var id in contentDivs ) {
       if ( id != tabId ) contentDivs[id].className = 'tabContent hide';
     }
+    
+ 	if(tabId == "trendingstream") {
+		tabId = getUrlVars()["search_txt"];
+		if(tabId == null)
+			tabId = "no_reports";
+		setButton(tabId);
+	}
   }
 
   function getUrlVars() {
@@ -148,7 +156,16 @@ function init() {
       }
     }
     
-    var url1 = window.location.href;    
+    var url1 = window.location.href;  
+    var tabId;
+    
+	if(selectedId == "trendingstream") {
+		tabId = getUrlVars()["search_txt"];
+		if(tabId == null)
+			tabId = "no_reports";
+		setButton(tabId);
+	}
+
     var url2 = url1.split("#", 2);
     var url3 = url2[0].split("?", 2);
     var newUrl = url3[0].concat(this.getAttribute('href')); // + window.location.hash;
@@ -168,7 +185,17 @@ function init() {
     return url.substring( hashPos + 1 );
   }
 
-
+  function setButton(choice) {
+	  //alert("put a breakpoint here");
+	var btn = document.getElementsByName("course");
+	for(var i = 0; btn.length; i++) {
+		if (btn[i].value == choice)
+			btn[i].checked = true;
+		else
+			btn[i].checked = false;
+	}
+  }
+  
 function onFileSelected() {
   filename = document.getElementById("input-file").value;
   if (filename == null || filename == "") {
@@ -233,6 +260,68 @@ function toggleCommentPost(id, expanded) {
 
 
 <body onload="init()">
+
+<div id="fb-root"></div>
+<script>
+window.fbAsyncInit = function() {
+	  FB.init({
+	    appId      : '218987624932137', // App ID
+	    channelUrl : '//zinabuna2013.appspot.com/channel.html', // Channel File http://balaurbun2013.appspot.com 
+	    status     : true, // check login status
+	    cookie     : true, // enable cookies to allow the server to access the session
+	    xfbml      : true  // parse XFBML
+	  });
+
+	  // Here we subscribe to the auth.authResponseChange JavaScript event. This event is fired
+	  // for any authentication related change, such as login, logout or session refresh. This means that
+	  // whenever someone who was previously logged out tries to log in again, the correct case below 
+	  // will be handled. 
+	  FB.Event.subscribe('auth.authResponseChange', function(response) {
+	    // Here we specify what we do with the response anytime this event occurs. 
+	    if (response.status === 'connected') {
+	      // The response object is returned with a status field that lets the app know the current
+	      // login status of the person. In this case, we're handling the situation where they 
+	      // have logged in to the app.
+	      testAPI();
+	    } else if (response.status === 'not_authorized') {
+	      // In this case, the person is logged into Facebook, but not into the app, so we call
+	      // FB.login() to prompt them to do so. 
+	      // In real-life usage, you wouldn't want to immediately prompt someone to login 
+	      // like this, for two reasons:
+	      // (1) JavaScript created popup windows are blocked by most browsers unless they 
+	      // result from direct interaction from people using the app (such as a mouse click)
+	      // (2) it is a bad experience to be continually prompted to login upon page load.
+	      FB.login();
+	    } else {
+	      // In this case, the person is not logged into Facebook, so we call the login() 
+	      // function to prompt them to do so. Note that at this stage there is no indication
+	      // of whether they are logged into the app. If they aren't then they'll see the Login
+	      // dialog right after they log in to Facebook. 
+	      // The same caveats as above apply to the FB.login() call here.
+	      FB.login();
+	    }
+	  });
+	  };
+
+	  // Load the SDK asynchronously
+	  (function(d){
+	   var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+	   if (d.getElementById(id)) {return;}
+	   js = d.createElement('script'); js.id = id; js.async = true;
+	   js.src = "//connect.facebook.net/en_US/all.js";
+	   ref.parentNode.insertBefore(js, ref);
+	  }(document));
+
+	  // Here we run a very simple test of the Graph API after login is successful. 
+	  // This testAPI() function is only called in those cases. 
+	  function testAPI() {
+	    console.log('Welcome!  Fetching your information.... ');
+	    FB.api('/me', function(response) {
+	      console.log('Good to see you, ' + response.name + '.');
+	    });
+	  }
+</script>
+
   <div class="wrap">
 
     <div class="header group">
@@ -240,8 +329,17 @@ function toggleCommentPost(id, expanded) {
         <img src="img/photofeed.png" alt="Photofeed" /></h1>
     </div>
     <div class="logoutgroup">
-         <p>Hello <%= ServletUtils.getProtectedUserNickname(currentUser.getNickname()) %> , <%= currentUser.getEmail() %> , <a href=<%= userService.createLogoutURL(configManager.getMainPageUrl())%>>Sign out</a></p>
-      
+    <%if(currentUser != null) { %>  
+         <p>Hello <%= ServletUtils.getProtectedUserNickname(currentUser.getNickname()) %> , 
+                  <%= currentUser.getEmail() %> , 
+                  <a href=<%= userService.createLogoutURL(configManager.getLoginPageUrl())%>>Sign out
+                  </a>
+         </p>
+    <% } else {%>
+                  <a href=<%= userService.createLoginURL(configManager.getMainPageUrl())%>>Sign in
+                  </a>
+   
+    <% } %>  
     </div>
       
 	<ul class="header group" id="tabs">
@@ -260,9 +358,12 @@ function toggleCommentPost(id, expanded) {
     <div class="glow"></div>
   	<div class="tabContent" id="managestream">
       <div class="view-title">
+	        <p>MANAGE STREAMS</p>
+	  <%
+    	if	(currentUser != null) { 
+	  %>
         <form action="<%= configManager.getManageAlbumsUrl() %>"
               method="post">     
-	        <p>MANAGE STREAMS</p>
 	        <p>Streams I own:</p>
 	        <table border="1">
 			 <tr>
@@ -282,8 +383,9 @@ function toggleCommentPost(id, expanded) {
 		        pageContext.forward(configManager.getErrorPageUrl(
 		          ConfigManager.ERROR_CODE_DATASTORE_INDEX_NOT_READY));
 		      }
-		
+			  int table_count = 0;
 		      for (Album album : albums) {
+		    	  table_count++;
 		    %>
 				 <tr>
 				 	<td><a href=<%= serviceManager.getRedirectUrl(null, currentUser.getUserId(), null, 
@@ -295,10 +397,24 @@ function toggleCommentPost(id, expanded) {
 				 </tr>
 			 <%	} %>
 			 </table> 
-	        <input id="delete-streams" class="active btn" type="submit" value="Delete Checked">
- 	    </form>      
+			 <%
+		      	String btn_type = "submit";
+			 	if (table_count == 0) {
+			 		btn_type = "hidden";
+			 %>
+	     	<p>Please create new streams...</p>			 
+  			<%	} %>
+	        <input id="delete-streams" class="active btn" type=<%= btn_type %> value="Delete Checked">
+ 	    </form>    
+	  <% } else {%> 	
+	     <p>Please login in order to manage your streams...</p>
+	  <% } %>
+	        
       </div>
-      <div class="manage-own">
+      <div class="manage-subscribed">
+	  <%	      
+        if	(currentUser != null) { 
+      %>
         <form action="<%= configManager.getManageAlbumsUrl() %>"
               method="post">
                 <p>Streams I subscribe to:</p>
@@ -311,33 +427,52 @@ function toggleCommentPost(id, expanded) {
                                 <th>Unsubscribe</th>
                          </tr>
 
-                    <%
-                      Iterable<Album> sub_albumsIter = albumManager.getOwnedAlbums(currentUser.getUserId());  //change here to subscribed albums
+                    <% 
+                      Iterable<Subscription> subscriptions_Iter = subscriptionManager.getSubscriberAlbums(currentUser.getUserId().toString()); 
                       ArrayList<Album> sub_albums = new ArrayList<Album>();
                       try {
-                        for (Album sub_album : sub_albumsIter) {
-                                sub_albums.add(sub_album);
+                        for (Subscription sub_scription : subscriptions_Iter) {
+                        	Album sub_alb = albumManager.getAlbumS(currentUser.getUserId(), sub_scription.getAlbumId().toString());
+                        	if(sub_alb != null)
+                                sub_albums.add(sub_alb);
                         }
                       } catch (DatastoreNeedIndexException e) {
                         pageContext.forward(configManager.getErrorPageUrl(
                           ConfigManager.ERROR_CODE_DATASTORE_INDEX_NOT_READY));
                       }
-
+                      
+        			  int table_count = 0;
                       for (Album sub_album : sub_albums) {
-                    %>
-                                 <tr>
-                                        <td><a href=<%= serviceManager.getRedirectUrl(null, currentUser.getUserId(), null,
+                    	table_count++;
+                  		Iterable<View> albumViews = viewManager.getAlbumViews(sub_album.getId().toString());
+                		long viewCount = 0;
+                		for (View view : albumViews) {
+                			viewCount++;
+                		}
+					%>
+                                  <tr>
+                                        <td><a href=<%= serviceManager.getSubscribeUrl(null, sub_album.getOwnerId(), null,
                                                         sub_album.getId().toString(),
-                                                         ServletUtils.REQUEST_PARAM_NAME_VIEW_STREAM, null) %>> <%= sub_album.getTitle() %></a></td>
-                                        <td><%= ServletUtils.formatTimestamp(photoManager.getNewestPhotoTimestamp(currentUser.getUserId(), sub_album.getId().toString())) %></td>
-                                        <td><%= photoManager.getAlbumSize(currentUser.getUserId(),sub_album.getId().toString())%></td>
-                                        <td><%= sub_album.getViews()%></td>
+                                                         ServletUtils.REQUEST_PARAM_NAME_VIEW_STREAM, "Subscribe") %>> <%= sub_album.getTitle() %></a></td>
+                                        <td><%= ServletUtils.formatTimestamp(photoManager.getNewestPhotoTimestamp( sub_album.getOwnerId(), sub_album.getId().toString())) %></td>
+                                        <td><%= photoManager.getAlbumSize(sub_album.getOwnerId(),sub_album.getId().toString())%></td>
+                                        <td><%= viewCount%></td>
                                         <td><input type="checkbox" name="unsubscribe-box" value=<%= sub_album.getId().toString() %>></td>
                                  </tr>
-                         <%     } %>
+                     <%     
+                     }
+                     %>
                          </table>
-                <input id="unsubscribe-streams" class="active btn" type="submit" value="Unsubscribe Checked">
+	 			 <%
+			      	String btn_type = "submit";
+				 	if (table_count == 0) {
+				 		btn_type = "hidden";
+				 %>
+		     	<p>Please subscribe to new streams...</p>			 
+	  			<%	} %>
+                <input id="unsubscribe-streams" class="active btn" type=<%= btn_type%> value="Unsubscribe Checked">
             </form>     
+      <% } %>
       </div>
 
 
@@ -350,8 +485,15 @@ function toggleCommentPost(id, expanded) {
 
 
 	<div class="tabContent" id="createstream">
+	<% int error_in_page=0;
+	String same_name = request.getParameter(ServletUtils.REQUEST_PARAM_NAME_PHOTO_LOC);
+	if (same_name != null) error_in_page = Integer.valueOf(same_name);
+	
+	if (error_in_page==0) { %>
       <div class="view-title">
         <p>CREATE STREAMS</p>
+        <% if (currentUser != null) { 
+		 %>
         <form action="<%= configManager.getCreateAlbumUrl() %>"
               method="post">     
 	        <input id="stream-name" class="input text" name="stream" type="text" value="Stream name here...">
@@ -368,7 +510,19 @@ function toggleCommentPost(id, expanded) {
 		     	<p>(Can be empty)</p>        
 		     </div>
 	    </form>
+	    <% } else { %>
+	     <p>Please login in order to create new streams...</p>	    
+	    <% } %>
      </div>
+     <% } else { %>
+     <div class="view-title">
+      
+     <img class="errormsg" 
+          src="img/CreateError.png"
+          alt="Error Image" />
+     
+     </div>
+     <%} %>
      </div>
 
      <%-- ******************************************************************* --%>
@@ -394,24 +548,60 @@ function toggleCommentPost(id, expanded) {
 		Album albm = albumManager.getAlbum(streamUserId, Long.parseLong(streamId));
 		if (albm != null) {	
 		%>
-			<p>Stream Name: "<%= albm.getTitle()%>"
-	  		for user: "<%= albm.getOwnerNickname() %>" </p>
+			<p>View pictures from stream: "<%= albm.getTitle()%>"
+	  		posted by user: "<%= albm.getOwnerNickname() %>" </p>
+	  		<div class="fb-like" data-href="http://developers.facebook.com/docs/reference/plugins/like" data-width="450" data-show-faces="true" data-send="true">
+		    </div>  
+	  		
 		<%
 		}
 		%>
-					<%-- MM: Subscribe  --%>
-        <div class="subscribe">
-        	<form action="<%= configManager.getManageAlbumsUrl() %>"
-                 method="post">    
-                   <input id="btn-post" class="active btn" type="submit" value="Subscribe">
-            </form>
-        </div>
-		
+		<% 
+	    if	(currentUser != null) { 
+		  if(currentUser.getUserId().toString().compareTo(streamUserId) != 0)
+		  {
+		%>
+						<%-- MM: Subscribe  --%>
+	        <div class="subscribe">
+	        <% 
+	        String subscribe = "Subscribe";
+	        subscribe = request.getParameter(ServletUtils.REQUEST_PARAM_NAME_SUBSCRIBE);
+	        if(subscribe == null)	
+	        	subscribe = "Subscribe";
+	        else {
+	        	if (subscribe.compareTo("Subscribe") == 0) {
+	        		subscribe = "Unsubscribe";
+	        		if(!subscriptionManager.isSubscribed(albm.getId().toString(), currentUser.getUserId().toString()))
+	        			subscriptionManager.addSubscription(albm.getId().toString(), currentUser.getUserId().toString());
+	        	}
+	        	else {
+	        		if (subscribe.compareTo("Unsubscribe") == 0) {
+	        			subscribe = "Subscribe";
+	        			if(subscriptionManager.isSubscribed(albm.getId().toString(), currentUser.getUserId().toString()))
+	       					subscriptionManager.unSubscribe(albm.getId().toString(), currentUser.getUserId().toString());        	
+	        		} 
+	        		else 
+	        			subscribe = "Subscribe";
+	        	}
+	        }
+	        %>
+	        	<form action="<%= serviceManager.getSubscribeUrl(null, streamUserId, null, 
+	                     				albm.getId().toString(), 
+	                     				ServletUtils.REQUEST_PARAM_NAME_VIEW_STREAM, subscribe) %>"
+	                 method="post">    
+	                   <input id="btn-post" class="active btn" type="submit" value=<%= subscribe %>>
+	            </form>
+	        </div>
+		<% 
+		} } else {
+		%>	
+	     <p>Please login in order to subscribe to this stream...</p>	    			
+		<% } %>
 		</div>
+		
     <%-- MM: adds the new picture to the album  --%>
     	<!-- KK -->
     	<%
-      	//Iterable<Photo> photoIter = photoManager.getActivePhotos();
       	Iterable<Photo> photoIter = photoManager.getSubsetOwnedAlbumPhotos(streamUserId, streamId, 3, start_with_photo-1);
       	ArrayList<Photo> photos = new ArrayList<Photo>();
       	int count=0;
@@ -428,10 +618,17 @@ function toggleCommentPost(id, expanded) {
           		ConfigManager.ERROR_CODE_DATASTORE_INDEX_NOT_READY));
       	}
 
-      // goes over the pictures, one by one, to be shown to the public
-      	count = 0;
-      	String reloadUrl;
-      	for (Photo photo : photos) {
+      
+      	%>
+      	<div class="bubble">
+      	 <img onmouseover="this.src='img/choose.png'" onmouseout="this.src=''" src="img/choose.png"/>
+      	 </div>
+      	<%
+      	
+        /* goes over the pictures, one by one, to be shown to the public */
+      	  count = 0;
+      	  String reloadUrl;
+      	  for (Photo photo : photos) {
       		reloadUrl = serviceManager.getAlbumCoverImageUrl(photo);      		
         	String firstClass = "";
         	String lastClass = "";
@@ -469,18 +666,10 @@ function toggleCommentPost(id, expanded) {
         		<!-- /.usr -->
       		</div>
       		<!-- /.post -->
-          </div> 
-          <!-- /.feed -->
-      		<%
-        	} 
-        	Iterable<Comment> comments = commentManager.getComments(photo);
-        	for (Comment comment : comments) {
-        	}
-      		%>
-      		<!-- MM: took out here code for last comment -->   
-    
+    	</div>
     	<!-- /.feed -->
    	<%
+	}
         	count++;
       	}
       	
@@ -531,8 +720,8 @@ function toggleCommentPost(id, expanded) {
         </div>
    <% 
 		
-    	albumIter = albumManager.getActiveAlbums();
-      	albums = new ArrayList<Album>();
+   		Iterable<Album> albumIter = albumManager.getActiveAlbums();
+   		ArrayList<Album> albums = new ArrayList<Album>();
       	try {
         	for (Album album : albumIter) {
 	        	albums.add(album);
@@ -561,7 +750,7 @@ function toggleCommentPost(id, expanded) {
 			else
 				coverPhotoUrl = serviceManager.getImageDownloadUrl(coverPhoto);	    	  
 	%>
-    		<div class="feed">
+     		<div class="feed">
 	      		<div class="post group">
 		        	<div class="image-wrap">
 		        		<a href="<%= serviceManager.getRedirectUrl(null, album.getOwnerId(), null, 
@@ -599,6 +788,7 @@ function toggleCommentPost(id, expanded) {
 	<!-- /.view -->  
 
 
+
      <%-- ******************************************************************* --%>
      <%-- MCM here starts the div shown if the client chooses the SEARCH view --%>
      <%-- ******************************************************************* --%>
@@ -617,46 +807,46 @@ function toggleCommentPost(id, expanded) {
           </div>
           <% 
           String search_text = request.getParameter(ServletUtils.REQUEST_PARAM_NAME_SEARCH_TXT);
-          if (search_text != null) {
-    		  
-    albumIter = albumManager.getActiveAlbums();
-  	albums = new ArrayList<Album>();
-  	try {
-    	for (Album album : albumIter) {
-        	if ((album.getTitle()).indexOf(search_text) != -1) {albums.add(album); }
-        	else 
-        		if ((album.getTags()!=null)&& (album.getTags()).indexOf(search_text) != -1) {albums.add(album);}
-        }
-  	} catch (DatastoreNeedIndexException e) {
-        pageContext.forward(configManager.getErrorPageUrl(
-          ConfigManager.ERROR_CODE_DATASTORE_INDEX_NOT_READY));
-  	} 
-  	
-  	}   int count = 0;
-      	for (Album album : albums) {
-      		Photo coverPhoto = null;
-      		String coverPhotoUrl = null;
-          	Iterable<Photo> photoIter = photoManager.getOwnedAlbumPhotos(album.getOwnerId().toString(), album.getId().toString());
-          	try {
-            	for (Photo photo : photoIter) {
-	          		if(photo.isAlbumCover())
-	          			coverPhoto = photo;
-            	}
-          	} catch (DatastoreNeedIndexException e) {
-            	pageContext.forward(configManager.getErrorPageUrl(
-              		ConfigManager.ERROR_CODE_DATASTORE_INDEX_NOT_READY));
-          	}
-			if(coverPhoto == null)
-				coverPhotoUrl = ServletUtils.getUserIconImageUrl(album.getOwnerId());
-			else
-				coverPhotoUrl = serviceManager.getImageDownloadUrl(coverPhoto);	    	  
+          if (search_text != null) {   		  
+        	  	Iterable<Album> albumIter = albumManager.getActiveAlbums();
+  				ArrayList<Album> albums = new ArrayList<Album>();
+  				try {
+    				for (Album album : albumIter) {
+        				if ((album.getTitle()).indexOf(search_text) != -1) {albums.add(album); }
+        				else 
+        					if ((album.getTags()!=null)&& (album.getTags()).indexOf(search_text) != -1) {albums.add(album);}
+        			}
+  				} catch (DatastoreNeedIndexException e) {
+        			pageContext.forward(configManager.getErrorPageUrl(
+         			 ConfigManager.ERROR_CODE_DATASTORE_INDEX_NOT_READY));
+  				}   	
+  			//}	
+          //if (search_text != null) {   		  
+          	int count = 0;
+	      	for (Album album : albums) {
+	      		Photo coverPhoto = null;
+	      		String coverPhotoUrl = null;
+	          	Iterable<Photo> photoIter = photoManager.getOwnedAlbumPhotos(album.getOwnerId().toString(), album.getId().toString());
+	          	try {
+	            	for (Photo photo : photoIter) {
+		          		if(photo.isAlbumCover())
+		          			coverPhoto = photo;
+	            	}
+	          	} catch (DatastoreNeedIndexException e) {
+	            	pageContext.forward(configManager.getErrorPageUrl(
+	              		ConfigManager.ERROR_CODE_DATASTORE_INDEX_NOT_READY));
+	          	}
+				if(coverPhoto == null)
+					coverPhotoUrl = ServletUtils.getUserIconImageUrl(album.getOwnerId());
+				else
+					coverPhotoUrl = serviceManager.getImageDownloadUrl(coverPhoto);	    	  
 	%>
       		<div class="feed">
 	      		<div class="post group">
 		        	<div class="image-wrap">
 		        		<a href="<%= serviceManager.getRedirectUrl(null, album.getOwnerId(), null, 
 				 				album.getId().toString(), 
-				 			 	ServletUtils.REQUEST_PARAM_NAME_SEARCH_STREAM, null) %>"> 
+				 			 	ServletUtils.REQUEST_PARAM_NAME_VIEW_STREAM, null) %>"> 
 		          		<img class="photo-image"
 		            		src="<%= coverPhotoUrl%>"
 			 			 	alt="Photo Image" /></a>
@@ -672,15 +862,12 @@ function toggleCommentPost(id, expanded) {
 	      		</div>
    			</div>
 	<%	
-	count++;
-	if (count ==2) break;
-      	}
+				count++;
+				if (count ==2) break;
+      		}
+          }
     %>
      </div>
-    <%-- MM: should appear as a result of the above search up to 5 streams --%>
-    <div>
-
-  </div>
   </div>
 
      <%-- ******************************************************************* --%>
@@ -692,14 +879,18 @@ function toggleCommentPost(id, expanded) {
       <div class="view-title">
         <p>TOP 3 TRENDING STREAMS</p>
       </div>
+         	<%
+          	String radio_choice = request.getParameter(ServletUtils.REQUEST_PARAM_NAME_SEARCH_TXT);
+            %>     
       <%
       //boolean ff = false;
       //if(ff)
       {
-      albums = new ArrayList<Album>();
+   	  ArrayList<Album> albums = new ArrayList<Album>();
       Album albm = null;
       Long albId = leaderboardManager.getLeaderboardEntry("EntryA").getAlbumId();
       String usrId = leaderboardManager.getLeaderboardEntry("EntryA").getUserId();
+      long a = leaderboardManager.getLeaderboardEntry("EntryA").getViewsNumber();
       if(albId != 0 && usrId != null) {
       	albm = albumManager.getAlbum(usrId, albId.longValue());
       	if(albm != null)
@@ -707,6 +898,7 @@ function toggleCommentPost(id, expanded) {
       }
       albId = leaderboardManager.getLeaderboardEntry("EntryB").getAlbumId();
       usrId = leaderboardManager.getLeaderboardEntry("EntryB").getUserId();
+      long b= leaderboardManager.getLeaderboardEntry("EntryB").getViewsNumber();
       if(albId != 0 && usrId != null) {
         	albm = albumManager.getAlbum(usrId, albId.longValue());
         	if(albm != null)
@@ -714,13 +906,14 @@ function toggleCommentPost(id, expanded) {
         }
       albId = leaderboardManager.getLeaderboardEntry("EntryC").getAlbumId();
       usrId = leaderboardManager.getLeaderboardEntry("EntryC").getUserId();
+      long c= leaderboardManager.getLeaderboardEntry("EntryC").getViewsNumber();
       if(albId != 0 && usrId != null) {
         	albm = albumManager.getAlbum(usrId, albId.longValue());
         	if(albm != null)
         		albums.add(albm);
         }
-	
-	  count = 0;
+	  long nv;
+	  int count = 0;
    	  for (Album album : albums) {
 		Photo coverPhoto = null;
 	   	String coverPhotoUrl = null;
@@ -737,7 +930,8 @@ function toggleCommentPost(id, expanded) {
 		if(coverPhoto == null)
 			coverPhotoUrl = ServletUtils.getUserIconImageUrl(album.getOwnerId());
 		else
-			coverPhotoUrl = serviceManager.getImageDownloadUrl(coverPhoto);	    	  
+			coverPhotoUrl = serviceManager.getImageDownloadUrl(coverPhoto);
+		if (count ==0) nv=a; else if (count ==1) nv=b; else nv=c;
 		%>
      		<div class="feed">
 	      		<div class="post group">
@@ -752,7 +946,7 @@ function toggleCommentPost(id, expanded) {
 		        	<div class="owner group">
 		          		<div class="desc">
 		            		<h3><%= ServletUtils.getProtectedUserNickname(album.getOwnerNickname()) %></h3>	            
-		            		<p class="timestamp"><%= ServletUtils.formatTimestamp(album.getUploadTime()) %></p>
+		            		<p><%= String.valueOf(nv)%> views past hour.</p>
 		            		<p>
 		            		<p><c:out value="<%= album.getTitle() %>" escapeXml="true"/>
 		          		</div>
@@ -770,22 +964,21 @@ function toggleCommentPost(id, expanded) {
       }
     %>
        	<div class = box >	
-      		<tr>
-      		    
-                    <td><input type="radio" name="course" value="no_reports">No reports</td><p></p>
-                    <td><input type="radio" name="course" value="five_min">Every 5 minutes</td><p></p>
-                    <td><input type="radio" name="course" value="one_hour">Every 1 hour </td><p></p>
-                    <td><input type="radio" name="course" value="every_day">Every day </td><p></p>
-      		</tr>
   		</div>
-        <div class="next-3-pict">
+         <div class="next-3-pict" >
                  <%-- MCM: replace action form with update rate --%>
-                 <tr> Email trending report </tr>
-        	     <form action="<%= configManager.getCreateAlbumUrl() %>"
-                   method="post">    
-                   <input id="btn-post" class="active btn" type="submit" value="Update Rate">
-                 </form>
-        </div>
+        	<form   
+               action="<%= configManager.getSetCronTimeUrl() %>"method="post"> 
+      		<tr>   		    
+                 <td><input type="radio" name="course" value="no_reports">No reports</td><p></p>
+                 <td><input type="radio" name="course" value="five_min">Every 5 minutes</td><p></p>
+                 <td><input type="radio" name="course" value="one_hour">Every 1 hour </td><p></p>
+                 <td><input type="radio" name="course" value="every_day">Every day </td><p></p>
+     		</tr>
+            <tr> Email trending report </tr>
+              <input id="btn-post" class="active btn" type="submit" value="Update Rate">
+            </form>
+       </div>
      
     		<!-- /.feed -->
  
@@ -800,9 +993,15 @@ function toggleCommentPost(id, expanded) {
       <div class="view-title">
         <p>SOCIAL STREAMS</p>
       </div>
+		 <!--
+		  Below we include the Login Button social plugin. This button uses the JavaScript SDK to
+		  present a graphical Login button that triggers the FB.login() function when clicked.
+		
+		  Learn more about options for the login button plugin:
+		  /docs/reference/plugins/login/ -->
+		
+		<fb:login-button show-faces="true" width="400" max-rows="2"></fb:login-button>
     </div>
-    
-  
   </div>
   <!-- /.wrap -->
 </body>

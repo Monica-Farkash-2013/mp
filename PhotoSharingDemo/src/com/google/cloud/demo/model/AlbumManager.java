@@ -60,4 +60,8 @@ public interface AlbumManager extends DemoEntityManager<Album> {
 	   */
 	  Album deactiveAlbum(String userId, long id);
 
+	Iterable<Album> getAlbums(String userId, String albumId);
+
+	Album getAlbumS(String userId, String albumId);
+
 }
